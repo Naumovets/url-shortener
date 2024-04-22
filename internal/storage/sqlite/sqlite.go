@@ -41,7 +41,7 @@ func New(storagePath string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (s *Storage) SaveUrl(urlToSave string, alias string) error {
+func (s *Storage) SaveURL(urlToSave string, alias string) error {
 	const op = "storage.sqlite.SaveUrl"
 
 	stmt, err := s.db.Prepare(`INSERT INTO url(url, alias) VALUES(?, ?)`)
@@ -60,7 +60,7 @@ func (s *Storage) SaveUrl(urlToSave string, alias string) error {
 	return nil
 }
 
-func (s *Storage) GetUrl(alias string) (string, error) {
+func (s *Storage) GetURL(alias string) (string, error) {
 	const op = "storage.sqlite.GetUrl"
 
 	stmt, err := s.db.Prepare(`SELECT url FROM url WHERE alias = ?`)
@@ -83,4 +83,21 @@ func (s *Storage) GetUrl(alias string) (string, error) {
 	return resURL, nil
 }
 
-// func (s *Storage) DeleteURL(alias string) error
+// TODO: implement method
+func (s *Storage) DeleteURL(alias string) error {
+	const op = "storage.sqlite.DeleteURL"
+
+	stmt, err := s.db.Prepare(`DELETE FROM url WHERE alias = ?`)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	_, err = stmt.Exec(alias)
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

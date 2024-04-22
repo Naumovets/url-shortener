@@ -2,10 +2,15 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 	"url-shortener/internal/config"
+	"url-shortener/internal/http_server/handlers/url/save"
 	"url-shortener/internal/lib/logger/sl"
 	"url-shortener/internal/storage/sqlite"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -20,20 +25,52 @@ func main() {
 		os.Exit(1)
 	}
 
-	err1 := storage.SaveUrl("https://google.com", "google")
-	if err1 != nil {
-		log.Error("failed to save url", sl.Err(err1))
-	} else {
-		log.Info("url1 is saved success")
+	_ = storage
+
+	// err1 := storage.SaveURL("https://ya.ru", "ya")
+	// if err1 != nil {
+	// 	log.Error("failed to save url", sl.Err(err1))
+	// } else {
+	// 	log.Info("url1 is saved success")
+	// }
+
+	// err2 := storage.DeleteURL("ya")
+
+	// if err2 != nil {
+	// 	log.Error("failed to delete ulr", sl.Err(err))
+	// } else {
+	// 	log.Info("url is deleted success")
+	// }
+
+	// err2 := storage.SaveURL("https://google.com", "google")
+	// if err2 != nil {
+	// 	log.Error("failed to save url", sl.Err(err2))
+	// } else {
+	// 	log.Info("url2 is saved success")
+	// }
+
+	router := chi.NewRouter()
+
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
+
+	router.Post("/url", save.New(log, storage))
+
+	log.Info("starting server", slog.String("address", cfg.Address))
+
+	server := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServer.TimeOut,
+		WriteTimeout: cfg.HTTPServer.TimeOut,
+		IdleTimeout:  cfg.HTTPServer.IdleTimeOut,
 	}
 
-	err2 := storage.SaveUrl("https://google.com", "google")
-	if err2 != nil {
-		log.Error("failed to save url", sl.Err(err2))
-	} else {
-		log.Info("url2 is saved success")
+	if err := server.ListenAndServe(); err != nil {
+		log.Error("failed to start server")
 	}
-
 }
 
 const (
